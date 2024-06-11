@@ -19,6 +19,7 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
+<<<<<<< HEAD
   <ItemGroup>
     <ClInclude Include="prototipes.h">
       <Filter>Исходные файлы</Filter>
@@ -27,4 +28,6 @@
       <Filter>Исходные файлы</Filter>
     </ClInclude>
   </ItemGroup>
+=======
+>>>>>>> c4a1e247b248e86df748655a035cf73619855fb4
 </Project>

@@ -141,10 +141,13 @@
   <ItemGroup>
     <ClCompile Include="Poker.cpp" />
   </ItemGroup>
+<<<<<<< HEAD
   <ItemGroup>
     <ClInclude Include="constants.h" />
     <ClInclude Include="prototipes.h" />
   </ItemGroup>
+=======
+>>>>>>> c4a1e247b248e86df748655a035cf73619855fb4
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
