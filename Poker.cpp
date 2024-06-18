@@ -97,85 +97,273 @@ void transferTopCard(int**& outSet, int**& inSet) {
     inSet = inSetBuf;
     outSet = outSetBuf;
 }
-
-int main()
-{
-    srand(time(NULL));
-    setlocale(LC_ALL, "");
-    //  ♥4 : ♦5 : ♣6 : ♠7
-    int** mainSet = generateCardsSet();
-    shuffle(mainSet);
-    showCards(mainSet);
-    cout << endl;
-    int playersCount = 6;
-    string* playersName = createPlayers(playersCount);
-    int* cash = createCash(playersCount, DEFAULT_CASH);
-    int*** playersSets = new int** [playersCount];
-    for (int i = 0; i < playersCount; i++) {
+int maxElement(int* array) {
+    int size = _msize(array) / sizeof(array[0]);
+    int max = array[0];
+    for (int i = 1; i < size; i++) {
+        if (max < array[i]) max = array[i];
+    }
+    return max;
+}
+void resetCheckPlayers(bool* checkPlayers) {
+    int size = _msize(checkPlayers);
+    for (int i = 0; i < size; i++) {
+        checkPlayers[i] = false;
+    }
+}
+void resetPlayersSets(int***& playersSets) {
+    int size = _msize(playersSets) / sizeof(playersSets[0]);
+    for (int i = 0; i < size; i++) {
+        //todo утечка памяти
         playersSets[i] = new int* [0];
     }
+}
+void startSettings(int**& mainSet, int& playersCount, string*& playersName, int*& cash) {
+    srand(time(NULL));
+    setlocale(LC_ALL, "");
+    mainSet = generateCardsSet();
+    shuffle(mainSet);
+    while (true) {
+        cout << "введите количество игроков от 2 до 6: ";
+        cin >> playersCount;
+        if (playersCount > 1 && playersCount < 7) break;
+    }
+    playersName = createPlayers(playersCount);
+    cash = createCash(playersCount, DEFAULT_CASH);
+}
+void showGame(int**& mainSet, string*& playersName, int*& cash) {
+    int***& playersSets, int& playersCount, int**& tableSet, int bank, int* currentBlinde = nullptr,
+        bool* checkPlayers = nullptr) {
+        system("cls");
+        cout << "колода:" << endl;
+        showCards(mainSet);
+        cout << endl;
+        for (int i = 0; i < playersCount; i++) {
+            showPlayer(playersName[i], cash[i], playersSets[i]);
+            if (currentBlinde != nullptr) cout << "ставка текущая: " << currentBlinde[i] << endl;
+            if (checkPlayers != nullptr) cout << ((checkPlayers[i]) ? "пасанул" : "") << endl;
+        }
+        cout << "банк: " << bank << endl;
+
+        cout << "стол: ";
+        showCards(tableSet);
+    }
+}
+void firstRound(int roundNumber, int indexSmallBlinde, int playersCount, int*& cash, int& bank, bool*& checkPlayers) {
+    string* playersName, int* currentBlinde) {
+    int blinde = DEFAULT_CASH / 20;
+    int smallBlinde = blinde / 2;
+    int currentPlayer;
+    int maxBlinde = blinde;
+
+    if (indexSmallBlinde > playersCount - 1) {
+        indexSmallBlinde = 0;
+    }
+    currentPlayer = indexSmallBlinde;
+
+    if (roundNumber == 1) {
+        if (cash[indexSmallBlinde] >= smallBlinde) {
+            cout << playersName[currentPlayer] << " - малый блайнд: " << smallBlinde << endl;
+            currentBlinde[currentPlayer] = smallBlinde;
+            cash[currentPlayer++] -= smallBlinde;
+            bank += smallBlinde;
+
+        }
+
+        if (cash[indexSmallBlinde + 1] >= blinde) {
+            cout << playersName[currentPlayer] << " - большой блайнд: " << blinde << endl;
+            currentBlinde[currentPlayer] = blinde;
+            cash[currentPlayer++] -= blinde;
+            bank += blinde;
+        }
+    }
+
+    for (int i = currentPlayer; i < playersCount; i++) {
+        if (checkPlayers[i]) {
+            i++;
+            continue;
+        }
+        cout << playersName[i] << ", ";
+        cout << "введите ставку: ";
+        cin >> currentBlinde[i];
+        if (currentBlinde[i] == 0) {
+            cout << "игрок пасанул: " << endl;
+            checkPlayers[i] = true;
+            continue;
+        }
+        else if (currentBlinde[i] < maxBlinde) {
+            cout << "нужна ставка больше: " << endl;
+            i--;
+            continue;
+        }
+        else if (currentBlinde[i] > cash[i]) {
+            cout << "недостаточно денег: " << endl;
+            i--;
+            continue;
+        }
+        else {
+            cout << "ставка принята: " << endl;
+            cash[i] -= currentBlinde[i];
+            bank += currentBlinde[i];
+            if (currentBlinde[i] > maxBlinde) maxBlinde = currentBlinde[i];
+        }
+    }
+
+    for (int i = 0; i < indexSmallBlinde; i++) {
+        if (checkPlayers[i]) {
+            i++;
+            continue;
+        }
+        cout << "введите ставку: ";
+        cin >> currentBlinde[i];
+        if (currentBlinde[i] == 0) {
+            cout << "игрок пасанул: " << endl;
+            continue;
+        }
+        else if (currentBlinde[i] < maxBlinde) {
+            cout << "нужна ставка больше: " << endl;
+            i--;
+            continue;
+        }
+        else if (currentBlinde[i] > cash[i]) {
+            cout << "недостаточно денег: " << endl;
+            i--;
+            continue;
+        }
+        else {
+            cout << "ставка принята: " << endl;
+            cash[i] -= currentBlinde[i];
+            bank += currentBlinde[i];
+            if (currentBlinde[i] > maxBlinde) maxBlinde = currentBlinde[i];
+            }
+        }
+    }
+}
+void secondRound(int indexSmallBlinde, int playersCount, int*& cash, int& bank, bool*& checkPlayers) {
+    string* playersName, int* currentBlinde) {
+
+    int maxBlinde = maxElement(currentBlinde);
+
+    for (int i = indexSmallBlinde; i < playersCount; i++) {
+        if (checkPlayers[i]) {
+            i++;
+            continue;
+        }
+
+        if (currentBlinde[i] < maxBlinde) {
+            int difBlinde = maxBlinde - currentBlinde[i];
+            if (cash[i] < difBlinde) {
+                //todo реализовать возможность продолжения игры.
+                cout << "Недостаточно денег." << endl;
+                checkPlayers[i] = true;
+                continue;
+            }
+            else {
+                char flag;
+                do {
+                    cout << playersName[i] << " поддержать y/n" << difBlinde << "?" << endl;
+                    cin >> flag;
+                } while (flag != 'n' && flag != 'y');
+                if (flag == 'n') {
+                    checkPlayers[i] = true;
+                    continue;
+                }
+                cash[i] -= difBlinde;
+                bank += difBlinde;
+            }
+        }
+    }
+    for (int i = 0; i < indexSmallBlinde; i++) {
+        if (checkPlayers[i]) {
+            i++;
+            continue;
+        }
+        if (currentBlinde[i] < maxBlinde) {
+            int difBlinde = maxBlinde - currentBlinde[i];
+            if (cash[i] < difBlinde) {
+                //todo реализовать возможность продолжения игры.
+                cout << "Недостаточно денег." << endl;
+                checkPlayers[i] = true;
+                continue;
+            }
+            else {
+                char flag;
+                do {
+                    cout << playersName[i] << " поддержать y/n" << difBlinde << "?" << endl;
+                    cin >> flag;
+                } while (flag != 'n' && flag != 'y');
+                if (flag == 'n') {
+                    checkPlayers[i] = true;
+                    continue;
+                }
+                cash[i] -= difBlinde;
+                bank += difBlinde;
+                }
+            }
+        }
+    }
+}
+void startGame(int playersCount, string*& playersName, int*& cash, int**& mainSet) {
+    int*** playersSets = new int** [playersCount]; // колоды игроков
+    int bank = 0;
+    resetPlayersSets(playersSets);
+    //первичная раздача игрокам
     for (int i = 0; i < playersCount; i++) {
         for (int j = 0; j < 2; j++) {
             transferTopCard(mainSet, playersSets[i]);
         }
     }
-    for (int i = 0; i < playersCount; i++) {
-        showPlayer(playersName[i], cash[i], playersSets[i]);
-    }
+    //вскрываем три карты на стол
     int** tableSet = new int* [0];
     for (int i = 0; i < 3; i++) {
         transferTopCard(mainSet, tableSet);
     }
-    cout << "Стоп: ";
-    showCards(tableSet);
-    int blinde = DEFAULT_CASH / 20;
-    int smallBlinde = blinde / 2;
-    int indexSmallBlinde = 0;
-    int currentPlayer;
-    while (true) {
-        if (indexSmallBlinde > playersCount - 1) indexSmallBlinde = 0;
-        currentPlayer = indexSmallBlinde;
-        if (cash[indexSmallBlinde] >= smallBlinde) {
-            cash[currentPlayer++] -= smallBlinde;
-        }
-        if (cash[indexSmallBlinde + 1] >= blinde) {
-            cash[currentPlayer++] -= blinde;
-        }
-        for (int i = indexSmallBlinde; i < playersCount; i++) {
-            cout << " Введите свою ставку: ";
-            int currentBlinde;
-            cin >> currentBlinde;
-            if (currentBlinde == 0) {
-                cout << "Игрок пасанул";
-                continue;
-            } 
-            else if (currentBlinde < blinde) {
-                cout << "Нелостаточная ставка" << endl;
-                i--;
-                continue;
-            }
-            else if (currentBlinde < cash[i]) {
-                cout << "Недостаточно денег" << endl;
-                i--;
-                continue;
-            }
-            else {
-                cout << "Ставка принята" << endl;
-                cash[i] -= currentBlinde;
-            }
-        }
-        for (int i = 0; i < indexSmallBlinde; i++) {
 
-        }
-        
+    showGame(mainSet, playersName, cash, playersSets, playersCount, tableSet, bank);
+    cout << endl;
+
+    int indexSmallBlinde = 0;
+    int* currentBlinde = new int[playersCount];
+    bool* checkPlayers = new bool[playersCount];
+    resetCheckPlayers(checkPlayers);
+
+    int roundNumber = 1;
+    while (true)
+    {
+        firstRound(roundNumber++, indexSmallBlinde, playersCount, cash,
+            bank, checkPlayers, playersName, currentBlinde);
+
+        showGame(mainSet, playersName, cash,
+            playersSets, playersCount, tableSet, bank, currentBlinde,
+            checkPlayers);
+
+        secondRound(indexSmallBlinde, playersCount, cash,
+            bank, checkPlayers, playersName, currentBlinde);
+
+        if (roundNumber == 4) break;
+
+        transferTopCard(mainSet, tableSet);
+
+        showGame(mainSet, playersName, cash,
+            playersSets, playersCount, tableSet, bank, currentBlinde,
+            checkPlayers);
+
+        resetCurrentBlinde(currentBlinde);
+
     }
 
-
-
-
-
-
-
-
+    cout << "ИТОГ: " << endl;
+    showGame(mainSet, playersName, cash,
+        playersSets, playersCount, tableSet, bank, currentBlinde,
+        checkPlayers);
+}
+int main()
+{
+    int** mainSet = nullptr; // главная колода карт
+    int playersCount; // количество игроков в игре (от 2 до 6)
+    string* playersName = nullptr;
+    int* cash = nullptr;
+    startSettings(mainSet, playersCount, playersName, cash);
+    startGame(playersCount, playersName, cash, mainSet);
 
 }
