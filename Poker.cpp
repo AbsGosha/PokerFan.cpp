@@ -303,6 +303,31 @@ void secondRound(int indexSmallBlinde, int playersCount, int*& cash, int& bank, 
         }
     }
 }
+int** unionSets(int** array1, int** array2) {
+    int size1 = _msize(array1) / sizeof(array1[0]);
+    int size2 = _msize(array2) / sizeof(array2[0]);
+    int isze3 = size1 + size2;
+    int** newArray = new int* [size3];
+    for (int i = 0; i < size1; i++) {
+        newArray[i] = array1[i];
+    }
+    for (int i = 0; i < size2; i++) {
+        newArray[i + size1] = array2[i];
+    }
+    return newArray;
+}
+void showCombinations(string*& playersName, int***& playersSets, int playersCount, int**& tableSet, bool* checkPlayers) {
+    for (int i = 0; i < playersCount; i++) {
+        if (checkPlayers[i]) {
+            cout << playersName[i] << " пасанул" << endl;
+            continue;
+        }
+        int** combination = unionSets(tableSet, playersSets[i]);
+        cout << playersName[i] << "[ ";
+        showCards(combination);
+        cout << " ]" << endl;
+    }
+}
 void startGame(int playersCount, string*& playersName, int*& cash, int**& mainSet) {
     int*** playersSets = new int** [playersCount]; // колоды игроков
     int bank = 0;
@@ -356,6 +381,7 @@ void startGame(int playersCount, string*& playersName, int*& cash, int**& mainSe
     showGame(mainSet, playersName, cash,
         playersSets, playersCount, tableSet, bank, currentBlinde,
         checkPlayers);
+    showCombinations(playersName, playersSets, playersCount, tableSet, checkPlayers)
 }
 int main()
 {
